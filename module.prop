@@ -2,5 +2,5 @@ id=samsung_daily_optimizer
 name=Vertex
 version=v1.4.2
 versionCode=142
-author=Wolly
-description=Performance & daily maintenance for Samsung Galaxy devices: Classic Bluetooth A2DP (Disable LE Audio), SkiaVK Vulkan UI, zero-latency frame latching, touch boost, SQLite defrag, UFS 4.0 tuning, deep bloat hibernation, ZSTD ZRAM engine, 120Hz smooth scroll lock, and bypass charging.
+author=Wolly (WollyDev24); ZRAM-safe fix by Lernik
+description=Original Vertex by Wolly (WollyDev24): https://github.com/WollyDev24/Vertex. One UI 9 / ZRAM-safe fix by Lernik. Performance & daily maintenance for Samsung Galaxy devices: Classic Bluetooth A2DP (Disable LE Audio), SkiaVK Vulkan UI, zero-latency frame latching, touch boost, SQLite defrag, UFS 4.0 tuning, deep bloat hibernation, ZSTD ZRAM engine, 120Hz smooth scroll lock, and bypass charging.

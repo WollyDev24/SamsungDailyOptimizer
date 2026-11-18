@@ -4,6 +4,17 @@ All notable changes to the **Vertex** (formerly Samsung Daily Optimizer) project
 
 ---
 
+## [v1.4.2 One UI 9 / ZRAM-safe community fix] - 2026-11-18
+
+Original Vertex developer: Wolly (WollyDev24), https://github.com/WollyDev24/Vertex. Community fix: Lernik.
+
+- Saved: Vulkan, SurfaceFlinger, Touch Boost, UFS, Bluetooth, RAM Plus setting, ZRAM, scheduler, and other Vertex features.
+- Fixed: Dangerous re-creation of active ZRAM in optimizer.sh and via WebUI.
+- Maintained old fix: the planner no longer mistakes the launch in the evening for missed optimization at 05:00.
+- Diagnostics saved: the module still tries to record launch logs.
+
+---
+
 ## [v1.4.2] - 2026-11-18
 
 ### ⚙️ Master Daemon & Reliability

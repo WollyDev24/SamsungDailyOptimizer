@@ -281,28 +281,34 @@ if [ "$PREVENT_LOCKSCREEN_AUDIO_STUTTER" = "1" ]; then
 fi
 
 # 11. ZRAM Compression Algorithm Engine Tuning
-# Switches kernel ZRAM compression to ZSTD for ~35% higher compression ratio on modern ARMv9
-if [ "$TUNE_ZRAM_ALGORITHM" = "1" ] && [ -f "/sys/block/zram0/comp_algorithm" ]; then
-    CURRENT_ALG=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | sed -n 's/.*\[\([^]]*\)\].*/\1/p')
+# One UI/Samsung RAM Plus can be actively using zram0 and its writeback backend.
+# Never swapoff/reset/recreate an initialized zram0 from a live daily optimizer.
+# Keep ZSTD support available for an uninitialized device only; otherwise
+# defer the algorithm choice safely and leave all other tuning unchanged.
+if [ "$TUNE_ZRAM_ALGORITHM" = "1" ] && [ -r /sys/block/zram0/comp_algorithm ]; then
+    CURRENT_ALG=$(sed -n 's/.*\[\([^]]*\)\].*/\1/p' /sys/block/zram0/comp_algorithm 2>/dev/null)
     TARGET_ALG="${ZRAM_COMP_ALGORITHM:-zstd}"
-    if [ -n "$CURRENT_ALG" ] && [ "$CURRENT_ALG" != "$TARGET_ALG" ]; then
-        if grep -q "$TARGET_ALG" /sys/block/zram0/comp_algorithm 2>/dev/null; then
-            log "Configuring ZRAM compression engine to $TARGET_ALG..."
-            notify_live "⚡ Switching ZRAM compression engine to $TARGET_ALG..."
-            ZRAM_SIZE=$(cat /sys/block/zram0/disksize 2>/dev/null)
-            swapoff /dev/block/zram0 2>/dev/null
-            echo 1 > /sys/block/zram0/reset 2>/dev/null
-            echo "$TARGET_ALG" > /sys/block/zram0/comp_algorithm 2>/dev/null
-            [ -n "$ZRAM_SIZE" ] && [ "$ZRAM_SIZE" -gt 0 ] && echo "$ZRAM_SIZE" > /sys/block/zram0/disksize 2>/dev/null
-            mkswap /dev/block/zram0 >/dev/null 2>&1
-            swapon /dev/block/zram0 >/dev/null 2>&1
-            NEW_ALG=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | sed -n 's/.*\[\([^]]*\)\].*/\1/p')
-            log "  [OK] ZRAM compression engine active: [$NEW_ALG]"
+    ZRAM_SIZE=$(cat /sys/block/zram0/disksize 2>/dev/null)
+    ZRAM_SIZE="${ZRAM_SIZE:-unknown}"
+
+    if [ "$CURRENT_ALG" = "$TARGET_ALG" ]; then
+        log "  [OK] ZRAM compression already active: [$CURRENT_ALG]"
+    elif [ "$ZRAM_SIZE" = "0" ] && ! grep -q 'zram0' /proc/swaps 2>/dev/null; then
+        # Kernel permits selecting the primary compressor before setting disksize.
+        # Do NOT initialize/mkswap/swapon here; leave that to Samsung init.
+        if grep -qw "$TARGET_ALG" /sys/block/zram0/comp_algorithm 2>/dev/null; then
+            if echo "$TARGET_ALG" > /sys/block/zram0/comp_algorithm 2>/dev/null; then
+                NEW_ALG=$(sed -n 's/.*\[\([^]]*\)\].*/\1/p' /sys/block/zram0/comp_algorithm 2>/dev/null)
+                log "  [OK] Prepared uninitialized ZRAM compressor: [$NEW_ALG]"
+            else
+                log "  [WARN] Could not select $TARGET_ALG before ZRAM initialization"
+            fi
         else
-            log "  [INFO] Target ZRAM algorithm $TARGET_ALG not supported by kernel, keeping [$CURRENT_ALG]"
+            log "  [INFO] Target $TARGET_ALG not listed in kernel ZRAM compressors; keeping [$CURRENT_ALG]"
         fi
     else
-        log "  [OK] ZRAM compression algorithm already active: [$CURRENT_ALG]"
+        log "  [GUARD] ZRAM initialized (size=$ZRAM_SIZE, compressor=$CURRENT_ALG); requested $TARGET_ALG deferred."
+        log "  [GUARD] Preserving Samsung RAM Plus/writeback; no swapoff/reset/mkswap/swapon."
     fi
 fi
 

@@ -17,6 +17,9 @@ echo $$ > /data/local/tmp/vertex_daemon.pid 2>/dev/null
 log_daemon() {
     TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$TIMESTAMP] [DAEMON] $1"
+    if [ -d /sdcard/Download ]; then
+        echo "[$TIMESTAMP] [DAEMON] $1" >> /sdcard/Download/Vertex-boot-events.log 2>/dev/null
+    fi
 }
 
 log_daemon "Vertex daemon started (PID $$). Audio guard active & scheduled for 05:00 AM."
@@ -41,7 +44,19 @@ protect_audio_threads() {
     settings put system lockscreen_sounds_enabled 0 2>/dev/null
 }
 
+# Correct v1.4.2 scheduling defect: starting this daemon at 05:01-23:59
+# must NOT interpret the missed 05:00 time as a reason to run immediately.
+# Keep the entire daily optimizer and all tuning controls unchanged.
 LAST_OPT_DAY=""
+START_DAY=$(date '+%Y%m%d' 2>/dev/null)
+START_H=$(date '+%H' 2>/dev/null)
+START_H=$((10#$START_H))
+if [ "$START_H" -ge 5 ]; then
+    LAST_OPT_DAY="$START_DAY"
+    log_daemon "Startup at/after 05:00: next maintenance is tomorrow at 05:00."
+else
+    log_daemon "Startup before 05:00: next maintenance is today at 05:00."
+fi
 
 while true; do
     CUR_DAY=$(date '+%Y%m%d' 2>/dev/null)

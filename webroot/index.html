@@ -1039,8 +1039,8 @@
       </div>
 
       <div class="sheet-buttons">
-        <button class="oneui-btn oneui-btn-primary" onclick="haptic(25); confirmZramSwitch('reboot')">Save for Next Reboot (Recommended &bull; Zero Lag)</button>
-        <button class="oneui-btn oneui-btn-danger" onclick="haptic(25); confirmZramSwitch('live')">Switch Live Now (May cause 5-10s freeze)</button>
+        <button class="oneui-btn oneui-btn-primary" onclick="haptic(25); confirmZramSwitch('reboot')">Save Preference (Pre-init Only)</button>
+        <button class="oneui-btn oneui-btn-danger" onclick="haptic(25); confirmZramSwitch('live')">Apply Only If Uninitialized (Safe)</button>
         <button class="oneui-btn oneui-btn-flat" onclick="closeSheets()">Cancel</button>
       </div>
     </div>
@@ -1668,51 +1668,49 @@
       if (active) active.classList.add('selected');
     }
 
+    // Preserve the user's compression preference. Never reset an active Samsung
+    // RAM Plus/writeback zram0: that operation can kernel-panic on this device.
     async function confirmZramSwitch(mode) {
       closeSheets();
       lastToggleTime = Date.now();
-      if (mode === 'reboot') {
-        showToast("Saved " + currentAlgChoice.toUpperCase() + " for next reboot");
-        const script = `
-          for dir in /data/adb/modules/samsung_daily_optimizer /data/local/tmp/SamsungDailyOptimizer; do
-            if [ -d "$dir" ] && [ -f "$dir/config.prop" ]; then
-              if grep -q "^ZRAM_COMP_ALGORITHM=" "$dir/config.prop"; then
-                sed -i "s/^ZRAM_COMP_ALGORITHM=.*/ZRAM_COMP_ALGORITHM=${currentAlgChoice}/" "$dir/config.prop" 2>/dev/null
-              else
-                echo "ZRAM_COMP_ALGORITHM=${currentAlgChoice}" >> "$dir/config.prop" 2>/dev/null
-              fi
+      const saveScript = `
+        for dir in /data/adb/modules/samsung_daily_optimizer /data/local/tmp/SamsungDailyOptimizer; do
+          if [ -d "$dir" ] && [ -f "$dir/config.prop" ]; then
+            if grep -q "^ZRAM_COMP_ALGORITHM=" "$dir/config.prop"; then
+              sed -i "s/^ZRAM_COMP_ALGORITHM=.*/ZRAM_COMP_ALGORITHM=${currentAlgChoice}/" "$dir/config.prop" 2>/dev/null
+            else
+              echo "ZRAM_COMP_ALGORITHM=${currentAlgChoice}" >> "$dir/config.prop" 2>/dev/null
             fi
-          done
-        `;
-        execCmd(script);
-      } else {
-        showToast("Switching ZRAM live to " + currentAlgChoice.toUpperCase() + "...");
-        const script = `
-          sync
-          echo 3 > /proc/sys/vm/drop_caches 2>/dev/null
-          echo 1 > /proc/sys/vm/compact_memory 2>/dev/null
+          fi
+        done
+      `;
+      await execCmd(saveScript);
+
+      if (mode === 'live') {
+        // Safe only before disksize is set; do not touch an initialized device.
+        const result = await execCmd(`
           ZRAM_SIZE=$(cat /sys/block/zram0/disksize 2>/dev/null)
-          swapoff /dev/block/zram0 2>/dev/null
-          echo 1 > /sys/block/zram0/reset 2>/dev/null
-          echo '${currentAlgChoice}' > /sys/block/zram0/comp_algorithm 2>/dev/null
-          [ -n "$ZRAM_SIZE" ] && [ "$ZRAM_SIZE" -gt 0 ] && echo "$ZRAM_SIZE" > /sys/block/zram0/disksize 2>/dev/null
-          mkswap /dev/block/zram0 2>/dev/null
-          swapon /dev/block/zram0 2>/dev/null
-          for dir in /data/adb/modules/samsung_daily_optimizer /data/local/tmp/SamsungDailyOptimizer; do
-            if [ -d "$dir" ] && [ -f "$dir/config.prop" ]; then
-              if grep -q "^ZRAM_COMP_ALGORITHM=" "$dir/config.prop"; then
-                sed -i "s/^ZRAM_COMP_ALGORITHM=.*/ZRAM_COMP_ALGORITHM=${currentAlgChoice}/" "$dir/config.prop" 2>/dev/null
-              else
-                echo "ZRAM_COMP_ALGORITHM=${currentAlgChoice}" >> "$dir/config.prop" 2>/dev/null
-              fi
+          if [ "$ZRAM_SIZE" = "0" ] && ! grep -q 'zram0' /proc/swaps 2>/dev/null; then
+            if echo '${currentAlgChoice}' > /sys/block/zram0/comp_algorithm 2>/dev/null; then
+              echo VERTEX_PREPARED
+            else
+              echo VERTEX_UNSUPPORTED
             fi
-          done
-        `;
-        await execCmd(script);
-        showToast("⚡ ZRAM Engine set to " + currentAlgChoice.toUpperCase() + "!");
-        document.getElementById("chip-zram-alg").innerText = currentAlgChoice.toUpperCase();
-        document.getElementById("card-zram-sub").innerText = currentAlgChoice.toUpperCase() + " (Active) • Tap to switch";
+          else
+            echo VERTEX_DEFERRED
+          fi
+        `);
+        if (typeof result === 'string' && result.includes('VERTEX_PREPARED')) {
+          showToast('ZRAM compressor prepared before initialization');
+        } else if (typeof result === 'string' && result.includes('VERTEX_UNSUPPORTED')) {
+          showToast('Compressor unsupported; preference retained');
+        } else {
+          showToast('ZRAM is active: saved preference, live switch blocked');
+        }
+      } else {
+        showToast('Preference saved; can apply only before ZRAM initializes');
       }
+      // Do not claim the selected compressor is active until read back from kernel.
     }
 
     // Display 120Hz Toggle (Instant 0ms Feedback)

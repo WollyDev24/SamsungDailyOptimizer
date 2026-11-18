@@ -7,6 +7,22 @@ if [ -f "$MODDIR/config.prop" ]; then
     . "$MODDIR/config.prop"
 fi
 
+# Temporary diagnostics: observe startup and native/system crashes (5 min max)
+# This does not change Vertex optimization settings.
+VERTEX_DIAG_DIR=/sdcard/Download
+[ -d "$VERTEX_DIAG_DIR" ] || VERTEX_DIAG_DIR=/data/local/tmp
+printf '[%s] Vertex service starting, root=%s, boot_reason=%s\n' \
+    "$(date '+%F %T')" "$(id -u)" "$(getprop sys.boot.reason)" \
+    >> "$VERTEX_DIAG_DIR/Vertex-boot-events.log" 2>/dev/null
+if [ -x /system/bin/logcat ]; then
+    (
+        /system/bin/toybox timeout 300 /system/bin/logcat \
+            -b crash -b system -v threadtime \
+            -f "$VERTEX_DIAG_DIR/Vertex-rescue-log.txt" -r 2048 -n 4
+    ) >/dev/null 2>&1 &
+fi
+
+
 # Apply boot-time Vulkan UI rendering & zero-latency frame latching
 if [ "${VULKAN_UI_ENABLED:-1}" = "1" ]; then
     setprop debug.hwui.renderer skiavk

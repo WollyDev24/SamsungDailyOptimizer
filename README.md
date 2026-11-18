@@ -8,6 +8,19 @@ Compatible with **KernelSU**, **Magisk**, **APatch**, and **Temproot**.
 
 ---
 
+## Original developer and community fix
+
+Original Vertex developer: **Wolly (WollyDev24)** — [WollyDev24/Vertex](https://github.com/WollyDev24/Vertex).
+
+This unofficial One UI 9 / ZRAM-safe build includes the fix by **Lernik**. Credit for the original Vertex module and its features remains with Wolly and the upstream contributors. The original `LICENSE` is included unchanged.
+
+- Saved: Vulkan, SurfaceFlinger, Touch Boost, UFS, Bluetooth, RAM Plus setting, ZRAM, scheduler, and other Vertex features.
+- Fixed: Dangerous re-creation of active ZRAM in optimizer.sh and via WebUI.
+- Maintained old fix: the planner no longer mistakes the launch in the evening for missed optimization at 05:00.
+- Diagnostics saved: the module still tries to record launch logs.
+
+---
+
 ## 🌟 What Vertex Does (In Plain English)
 
 | What You Feel | How Vertex Does It |
