@@ -8,20 +8,7 @@ Compatible with **KernelSU**, **Magisk**, **APatch**, and **Temproot**.
 
 ---
 
-## Original developer and community fix
-
-Original Vertex developer: **Wolly (WollyDev24)** — [WollyDev24/Vertex](https://github.com/WollyDev24/Vertex).
-
-This unofficial One UI 9 / ZRAM-safe build includes the fix by **Lernik**. Credit for the original Vertex module and its features remains with Wolly and the upstream contributors. The original `LICENSE` is included unchanged.
-
-- Saved: Vulkan, SurfaceFlinger, Touch Boost, UFS, Bluetooth, RAM Plus setting, ZRAM, scheduler, and other Vertex features.
-- Fixed: Dangerous re-creation of active ZRAM in optimizer.sh and via WebUI.
-- Maintained old fix: the planner no longer mistakes the launch in the evening for missed optimization at 05:00.
-- Diagnostics saved: the module still tries to record launch logs.
-
----
-
-## 🌟 What Vertex Does (In Plain English)
+## 🌟 What Vertex Does
 
 | What You Feel | How Vertex Does It |
 |---|---|
@@ -39,7 +26,7 @@ This unofficial One UI 9 / ZRAM-safe build includes the fix by **Lernik**. Credi
 
 ---
 
-## 📲 How to Install (30-Second Guide)
+## 📲 How to Install
 
 1. **Download**: Grab **`Vertex.zip`** from the [Latest Release](https://github.com/WollyDev24/Vertex/releases/latest).
 2. **Flash**:
@@ -53,7 +40,7 @@ This unofficial One UI 9 / ZRAM-safe build includes the fix by **Lernik**. Credi
 
 ---
 
-## 🎨 The Dashboard (Styled like Samsung Good Lock / Home Up)
+## 🎨 The Dashboard
 
 Vertex includes a built-in dashboard right inside KernelSU, APatch, or MMRL. Tap the **WebUI** button to open it:
 
@@ -89,7 +76,7 @@ All modern Samsung Galaxy devices running **Any One Ui Version** (Galaxy S24, S2
 
 ---
 
-## 🛠️ For Geeks & Advanced Users (Under the Hood)
+## 🛠️ What happens under the hood
 
 <details>
 <summary><b>Click to expand kernel and sysctl tuning details</b></summary>
@@ -112,7 +99,7 @@ All modern Samsung Galaxy devices running **Any One Ui Version** (Galaxy S24, S2
 
 ---
 
-## 💻 Standalone Installation (No Flashing)
+## 💻 Standalone Installatio
 
 If you use Temproot or prefer running Vertex directly from a terminal:
 
